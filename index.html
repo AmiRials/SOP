@@ -2,9 +2,8 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <!-- อนุญาตให้ซูมอ่านได้ทุกอุปกรณ์ -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title id="pageTitle">กำลังโหลดข้อมูล...</title>
+    <title id="pageTitle">กำลังโหลด...</title>
     
     <!-- Google Fonts: Prompt -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,12 +30,11 @@
         }
         body {
             font-family: 'Prompt', sans-serif;
-            background-color: #18181b; /* เทาเข้มพื้นหลังหลัก */
+            background-color: #18181b;
             color: #ffffff;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* ซ่อน Scrollbar ของแถบเมนูแท็บบนมือถือแต่ยังเลื่อนซ้ายขวาได้ */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -45,7 +43,6 @@
             scrollbar-width: none;
         }
 
-        /* บังคับรูปภาพทั้งหมดในเนื้อหาให้พอดีจอ ไม่ล้น แต่ซูมขยายได้ */
         #tabContent img {
             max-width: 100% !important;
             width: auto !important;
@@ -56,7 +53,6 @@
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
         }
 
-        /* ไฮไลต์คำที่ค้นหา */
         mark.search-highlight {
             background-color: #f97316;
             color: #ffffff;
@@ -79,7 +75,6 @@
     <!-- แถบเมนูด้านบน -->
     <header class="sticky top-0 z-30 bg-zinc-900/95 backdrop-blur-md border-b border-zinc-800 shadow-md">
         <div class="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-            <!-- ปุ่มย้อนกลับ (พื้นหลังสีส้ม ตัวอักษรสีขาว) -->
             <a href="https://amirials.github.io/app/" 
                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white text-sm font-medium shadow-sm transition-all shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -107,7 +102,7 @@
         </div>
     </header>
 
-    <!-- พื้นที่เนื้อหาหลัก (พื้นหลังสีเทา ตัวอักษรสีขาว) -->
+    <!-- พื้นที่เนื้อหาหลัก -->
     <main class="max-w-4xl mx-auto px-4 py-6 sm:py-8">
         <div class="bg-zinc-800 rounded-2xl shadow-xl border border-zinc-700/80 overflow-hidden">
             
@@ -118,22 +113,19 @@
                 </h1>
                 <span class="inline-flex items-center gap-1.5 text-xs font-medium text-orange-300 bg-orange-500/10 border border-orange-500/30 px-3 py-1 rounded-full">
                     <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-                    ออนไลน์
+                    เรียลไทม์
                 </span>
             </div>
 
             <!-- แถบเลือกแท็บเมนูอัตโนมัติ -->
             <div id="tabMenuWrapper" class="hidden border-b border-zinc-700 bg-zinc-800/60 px-4 sm:px-7 pt-3.5">
-                <div id="tabMenu" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-3.5">
-                    <!-- ปุ่มเมนูแต่ละแท็บจะถูกสร้างอัตโนมัติที่นี่ -->
-                </div>
+                <div id="tabMenu" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-3.5"></div>
             </div>
 
             <!-- สถานะกำลังโหลด -->
             <div id="loadingIndicator" class="p-12 sm:p-16 flex flex-col items-center justify-center text-center">
                 <div class="w-10 h-10 border-4 border-zinc-600 border-t-orange-500 rounded-full animate-spin mb-4"></div>
                 <p class="text-white font-medium">กำลังโหลด...</p>
-                <p class="text-zinc-400 text-xs mt-1">โปรดรอสักครู่</p>
             </div>
 
             <!-- กล่องแจ้งเตือนเมื่อโหลดไม่สำเร็จ -->
@@ -145,25 +137,44 @@
                 </div>
                 <h2 class="text-lg font-semibold text-white mb-1">ไม่สามารถโหลดข้อมูลได้</h2>
                 <p class="text-sm text-zinc-300 max-w-md mx-auto mb-5">
-                    กรุณาตรวจสอบว่าใน Google Apps Script ได้กด <b>Deploy > Manage deployments > Edit > เลือก New version</b> แล้ว
+                    กรุณาตรวจสอบว่าใน Google Apps Script ได้กด <b>Deploy > New version</b> แล้ว
                 </p>
                 <button onclick="fetchDocumentData()" class="px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white text-sm font-medium rounded-xl shadow transition">
                     ลองโหลดใหม่อีกครั้ง
                 </button>
             </div>
 
-            <!-- พื้นที่แสดงผลการค้นหา (แสดงเฉพาะเมื่อพิมพ์ค้นหา) -->
+            <!-- พื้นที่แสดงผลการค้นหา -->
             <div id="searchResultsBox" class="hidden p-5 sm:p-8 text-white"></div>
 
-            <!-- พื้นที่แสดงเนื้อหาของแท็บที่เลือก (พื้นหลังสีเทา ตัวอักษรสีขาว) -->
-            <div id="tabContent" class="p-5 sm:p-8 text-base sm:text-[17px] text-white bg-zinc-800">
-                <!-- เนื้อหาของแท็บที่คลิกจะแสดงที่นี่ -->
-            </div>
+            <!-- พื้นที่แสดงเนื้อหาของแท็บที่เลือก -->
+            <div id="tabContent" class="p-5 sm:p-8 text-base sm:text-[17px] text-white bg-zinc-800"></div>
 
-            <!-- ส่วนท้ายกล่องเนื้อหา พร้อมปุ่มเลื่อนขึ้นบนสุดเมื่ออ่านลงสุด -->
-            <div id="bottomBar" class="hidden px-5 py-4 bg-zinc-800/90 border-t border-zinc-700 flex justify-between items-center">
-                <span class="text-xs text-zinc-400">สิ้นสุดเนื้อหาในหน้านี้</span>
-                <button onclick="scrollToTop()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white text-sm font-medium shadow transition">
+            <!-- ส่วนท้ายหน้า: ปุ่ม Like / Dislike ถามความคิดเห็น และปุ่มเลื่อนขึ้นบนสุด -->
+            <div id="bottomBar" class="hidden px-5 sm:px-8 py-6 bg-zinc-800/95 border-t border-zinc-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <!-- ส่วนประเมินความพึงพอใจ (Like / Dislike) -->
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
+                    <span class="text-sm text-zinc-300">เนื้อหานี้มีประโยชน์ไหมครับ?</span>
+                    <div class="flex items-center gap-2">
+                        <button id="likeBtn" onclick="handleFeedback('like')" 
+                            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-700 hover:bg-orange-600 text-white text-xs font-medium transition-all border border-zinc-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2m0下のv5a2 2 0 01-2 2h-.5c-.51 0-.905.19-1.165.523l-1.835 2.398a2 2 0 00-.332 1.107V20h8.667a2 2 0 001.97-1.604l1.25-6.25A2 2 0 0016.5 10H14z" />
+                            </svg>
+                            <span id="likeCount">0</span>
+                        </button>
+                        <button id="dislikeBtn" onclick="handleFeedback('dislike')" 
+                            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-700 hover:bg-orange-600 text-white text-xs font-medium transition-all border border-zinc-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v5a2 2 0 002 2m0-0v-5a2 2 0 012-2h.5c.51 0 .905-.19 1.165-.523l1.835-2.398a2 2 0 00.332-1.107V4H7.334a2 2 0 00-1.97 1.604l-1.25 6.25A2 2 0 007.5 14H10z" />
+                            </svg>
+                            <span id="dislikeCount">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ปุ่มเลื่อนขึ้นบนสุด -->
+                <button onclick="scrollToTop()" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white text-sm font-medium shadow transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
                     </svg>
@@ -174,7 +185,7 @@
         </div>
     </main>
 
-    <!-- ปุ่มลอยเลื่อนขึ้นบนสุด (แสดงอัตโนมัติเมื่อเลื่อนหน้าจอลง) -->
+    <!-- ปุ่มลอยเลื่อนขึ้นบนสุด -->
     <button id="floatingTopBtn" onclick="scrollToTop()" title="เลื่อนขึ้นบนสุด"
         class="fixed bottom-6 right-6 z-40 hidden items-center justify-center w-12 h-12 rounded-full bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white shadow-lg shadow-black/40 transition-all">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -186,6 +197,9 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbw-KFYGODiQByRq-GvGTXAbOCCylBUOED_utB9toFT21YabqF7Feka95y8_umDNaHq-/exec";
         let allTabsData = [];
         let currentTabIndex = 0;
+
+        // ระบบจัดเก็บและโหลดคะแนน Like/Dislike แยกตามหน้า (Tab ID)
+        let feedbackData = JSON.parse(localStorage.getItem('doc_feedback') || '{}');
 
         async function fetchDocumentData() {
             const loadingEl = document.getElementById('loadingIndicator');
@@ -238,7 +252,6 @@
             tabsData.forEach((tab, index) => {
                 const isFirst = index === 0;
 
-                // สร้างปุ่มเมนูแต่ละแท็บ (ธีมส้ม-เทา ตัวอักษรสีขาว)
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = isFirst 
@@ -248,7 +261,6 @@
                 btn.onclick = () => selectTab(index);
                 tabMenu.appendChild(btn);
 
-                // สร้างกล่องเนื้อหาของแท็บนั้น
                 const pane = document.createElement('div');
                 pane.id = `tab-${index}`;
                 pane.className = isFirst ? 'tab-pane block animate-fade-in' : 'tab-pane hidden';
@@ -258,11 +270,11 @@
 
             tabMenuWrapper.classList.remove('hidden');
             bottomBar.classList.remove('hidden');
+            updateFeedbackUI(currentTabIndex);
         }
 
         function selectTab(index) {
             currentTabIndex = index;
-            // ล้างค่าค้นหาหากกำลังเปิดหน้าผลลัพธ์การค้นหาอยู่
             if (document.getElementById('searchInput').value.trim() !== '') {
                 clearSearch(false);
             }
@@ -286,9 +298,58 @@
                     b.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all bg-orange-600/40 hover:bg-orange-600/80 text-white border border-orange-500/30';
                 }
             });
+
+            updateFeedbackUI(index);
         }
 
-        // ระบบค้นหาข้อความข้ามทุกแท็บ
+        // จัดการกดปุ่ม Like / Dislike
+        function handleFeedback(type) {
+            const tabKey = `tab_${currentTabIndex}`;
+            if (!feedbackData[tabKey]) {
+                feedbackData[tabKey] = { likes: 0, dislikes: 0, userVote: null };
+            }
+
+            const currentVote = feedbackData[tabKey].userVote;
+
+            if (currentVote === type) {
+                // ยกเลิกโหวตหากกดซ้ำปุ่มเดิม
+                feedbackData[tabKey][type + 's']--;
+                feedbackData[tabKey].userVote = null;
+            } else {
+                if (currentVote) {
+                    feedbackData[tabKey][currentVote + 's']--;
+                }
+                feedbackData[tabKey][type + 's']++;
+                feedbackData[tabKey].userVote = type;
+            }
+
+            localStorage.setItem('doc_feedback', JSON.stringify(feedbackData));
+            updateFeedbackUI(currentTabIndex);
+        }
+
+        function updateFeedbackUI(index) {
+            const tabKey = `tab_${index}`;
+            const data = feedbackData[tabKey] || { likes: 0, dislikes: 0, userVote: null };
+
+            document.getElementById('likeCount').innerText = data.likes;
+            document.getElementById('dislikeCount').innerText = data.dislikes;
+
+            const likeBtn = document.getElementById('likeBtn');
+            const dislikeBtn = document.getElementById('dislikeBtn');
+
+            if (data.userVote === 'like') {
+                likeBtn.className = 'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-600 text-white text-xs font-medium shadow-md transition-all border border-orange-400';
+                dislikeBtn.className = 'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-700 hover:bg-orange-600 text-white text-xs font-medium transition-all border border-zinc-600';
+            } else if (data.userVote === 'dislike') {
+                dislikeBtn.className = 'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-600 text-white text-xs font-medium shadow-md transition-all border border-orange-400';
+                likeBtn.className = 'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-700 hover:bg-orange-600 text-white text-xs font-medium transition-all border border-zinc-600';
+            } else {
+                likeBtn.className = 'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-700 hover:bg-orange-600 text-white text-xs font-medium transition-all border border-zinc-600';
+                dislikeBtn.className = 'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-700 hover:bg-orange-600 text-white text-xs font-medium transition-all border border-zinc-600';
+            }
+        }
+
+        // ระบบค้นหาข้อความ
         function handleSearch(keyword) {
             const query = keyword.trim();
             const clearBtn = document.getElementById('clearSearchBtn');
@@ -312,14 +373,12 @@
             let matchCount = 0;
 
             allTabsData.forEach((tab, index) => {
-                // แปลง HTML เป็นข้อความล้วนเพื่อค้นหาอย่างแม่นยำ (ไม่กระทบ Tag รูปภาพ base64)
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = tab.content;
                 const plainText = tempDiv.innerText || tempDiv.textContent || "";
 
                 if (plainText.toLowerCase().includes(query.toLowerCase()) || tab.title.toLowerCase().includes(query.toLowerCase())) {
                     matchCount++;
-                    // ดึงเฉพาะย่อหน้าที่มีคำค้นหา
                     const lines = plainText.split('\n').filter(line => line.trim().length > 0);
                     const matchedLines = lines.filter(line => line.toLowerCase().includes(query.toLowerCase()));
                     
@@ -369,7 +428,6 @@
             }
         }
 
-        // ระบบเลื่อนขึ้นบนสุด
         function scrollToTop() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -385,7 +443,6 @@
             }
         });
 
-        // เริ่มต้นดึงข้อมูล
         fetchDocumentData();
     </script>
 </body>
