@@ -191,9 +191,9 @@
         </svg>
     </button>
 
-    <script>
+        <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbw-KFYGODiQByRq-GvGTXAbOCCylBUOED_utB9toFT21YabqF7Feka95y8_umDNaHq-/exec";
-        let allTabsData = [];
+        let allTabsData = []; // เก็บ id, title และ content (ถ้าโหลดแล้ว)
         let currentTabIndex = 0;
         let feedbackData = JSON.parse(localStorage.getItem('doc_feedback') || '{}');
 
@@ -205,6 +205,7 @@
             errorEl.classList.add('hidden');
 
             try {
+                // ยิงครั้งแรก: ได้รายชื่อแท็บ + เนื้อหาแท็บแรกทันที ไม่ต้องรอนาน 30 วิ
                 const response = await fetch(API_URL, {
                     method: 'GET',
                     redirect: 'follow'
@@ -216,6 +217,11 @@
 
                 const data = await response.json();
                 allTabsData = data.tabs || [];
+
+                // ใส่ content แท็บแรกลงใน cache ทันที
+                if (allTabsData.length > 0) {
+                    allTabsData[0].content = data.initialContent;
+                }
 
                 document.getElementById('pageTitle').innerText = data.docTitle || "คู่มือการใช้งาน";
                 document.getElementById('docTitle').innerText = data.docTitle || "คู่มือการใช้งาน";
@@ -229,7 +235,6 @@
             }
         }
 
-        // ระบบแสดงผลแบบรวดเร็ว: สร้างปุ่มเมนูก่อน แล้วแสดงแท็บแรกทันที
         function renderFastUI(tabsData) {
             const tabMenuWrapper = document.getElementById('tabMenuWrapper');
             const tabMenu = document.getElementById('tabMenu');
@@ -258,11 +263,11 @@
                 tabMenu.appendChild(btn);
             });
 
-            // 2. แสดงเนื้อหาเฉพาะแท็บแรกก่อนทันที เพื่อความรวดเร็ว
+            // 2. แสดงเนื้อหาแท็บแรกทันที
             const firstPane = document.createElement('div');
             firstPane.id = `tab-0`;
             firstPane.className = 'tab-pane block animate-fade-in';
-            firstPane.innerHTML = tabsData[0].content;
+            firstPane.innerHTML = tabsData[0].content || '';
             tabContent.appendChild(firstPane);
 
             tabMenuWrapper.classList.remove('hidden');
@@ -270,34 +275,12 @@
             updateFeedbackUI(0);
         }
 
-        // เมื่อคลิกเลือกแท็บเมนูอื่น ค่อยโหลด/แสดงเนื้อหาหน้านั้นทันที
-        function selectTab(index) {
+        // เมื่อคลิกเลือกแท็บเมนูอื่น: ถ้ายังไม่เคยโหลดเนื้อหา ให้ดึงเฉพาะแท็บนั้นแบบ Asynchronous
+        async function selectTab(index) {
             currentTabIndex = index;
             if (document.getElementById('searchInput').value.trim() !== '') {
                 clearSearch(false);
             }
-
-            const tabContent = document.getElementById('tabContent');
-            
-            // ตรวจสอบว่าเนื้อหาของแท็บนี้ถูกสร้างหรือยัง ถ้ายังให้สร้างเพิ่ม (Lazy Load)
-            let pane = document.getElementById(`tab-${index}`);
-            if (!pane) {
-                pane = document.createElement('div');
-                pane.id = `tab-${index}`;
-                pane.className = 'tab-pane hidden';
-                pane.innerHTML = allTabsData[index].content;
-                tabContent.appendChild(pane);
-            }
-
-            // ซ่อนทุกหน้าแล้วแสดงหน้าปัจจุบัน
-            const panes = document.querySelectorAll('.tab-pane');
-            panes.forEach(p => {
-                p.classList.add('hidden');
-                p.classList.remove('block', 'animate-fade-in');
-            });
-
-            pane.classList.remove('hidden');
-            pane.classList.add('block', 'animate-fade-in');
 
             // สลับสถานะ Active ของปุ่มเมนู
             const buttons = document.querySelectorAll('.tab-btn');
@@ -308,6 +291,55 @@
                     b.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all bg-orange-600/40 hover:bg-orange-600/80 text-white border border-orange-500/30';
                 }
             });
+
+            const tabContent = document.getElementById('tabContent');
+            let pane = document.getElementById(`tab-${index}`);
+
+            // ถ้ายังไม่มีแท็บนี้ใน DOM
+            if (!pane) {
+                pane = document.createElement('div');
+                pane.id = `tab-${index}`;
+                pane.className = 'tab-pane hidden';
+                tabContent.appendChild(pane);
+            }
+
+            // ซ่อนทุกหน้าก่อน
+            const panes = document.querySelectorAll('.tab-pane');
+            panes.forEach(p => {
+                p.classList.add('hidden');
+                p.classList.remove('block', 'animate-fade-in');
+            });
+
+            // ตรวจสอบว่ามีเนื้อหาใน Cache หรือยัง
+            const tabData = allTabsData[index];
+            if (!tabData.content) {
+                // แสดงสถานะหมุนรอเฉพาะในแท็บนี้
+                pane.innerHTML = `
+                    <div class="py-12 flex flex-col items-center justify-center text-center">
+                        <div class="w-8 h-8 border-3 border-zinc-600 border-t-orange-500 rounded-full animate-spin mb-3"></div>
+                        <p class="text-zinc-400 text-sm">กำลังโหลดเนื้อหาหัวข้อนี้...</p>
+                    </div>
+                `;
+                pane.classList.remove('hidden');
+                pane.classList.add('block');
+
+                try {
+                    const res = await fetch(`${API_URL}?tabId=${encodeURIComponent(tabData.id)}`, {
+                        method: 'GET',
+                        redirect: 'follow'
+                    });
+                    const result = await res.json();
+                    tabData.content = result.content; // บันทึกลง cache จะได้ไม่ต้องโหลดซ้ำ
+                    pane.innerHTML = tabData.content;
+                    pane.classList.add('animate-fade-in');
+                } catch (e) {
+                    pane.innerHTML = '<p class="text-center text-orange-400 py-6">เกิดข้อผิดพลาดในการโหลดเนื้อหา กรุณาลองใหม่อีกครั้ง</p>';
+                }
+            } else {
+                pane.innerHTML = tabData.content;
+                pane.classList.remove('hidden');
+                pane.classList.add('block', 'animate-fade-in');
+            }
 
             updateFeedbackUI(index);
         }
@@ -380,19 +412,24 @@
             let matchCount = 0;
 
             allTabsData.forEach((tab, index) => {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = tab.content;
-                const plainText = tempDiv.innerText || tempDiv.textContent || "";
+                let plainText = "";
+                if (tab.content) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = tab.content;
+                    plainText = tempDiv.innerText || tempDiv.textContent || "";
+                }
 
-                if (plainText.toLowerCase().includes(query.toLowerCase()) || tab.title.toLowerCase().includes(query.toLowerCase())) {
+                if (tab.title.toLowerCase().includes(query.toLowerCase()) || (plainText && plainText.toLowerCase().includes(query.toLowerCase()))) {
                     matchCount++;
-                    const lines = plainText.split('\n').filter(line => line.trim().length > 0);
-                    const matchedLines = lines.filter(line => line.toLowerCase().includes(query.toLowerCase()));
-                    
-                    let snippetHtml = matchedLines.slice(0, 3).map(line => {
-                        const highlighted = line.replace(regex, '<mark class="search-highlight">$1</mark>');
-                        return `<p class="text-sm text-zinc-200 mt-1.5 leading-relaxed">${highlighted}</p>`;
-                    }).join('');
+                    let snippetHtml = "";
+                    if (plainText) {
+                        const lines = plainText.split('\n').filter(line => line.trim().length > 0);
+                        const matchedLines = lines.filter(line => line.toLowerCase().includes(query.toLowerCase()));
+                        snippetHtml = matchedLines.slice(0, 3).map(line => {
+                            const highlighted = line.replace(regex, '<mark class="search-highlight">$1</mark>');
+                            return `<p class="text-sm text-zinc-200 mt-1.5 leading-relaxed">${highlighted}</p>`;
+                        }).join('');
+                    }
 
                     if (!snippetHtml) {
                         snippetHtml = `<p class="text-sm text-zinc-300 mt-1">พบคำค้นหาในชื่อหัวข้อแท็บนี้</p>`;
