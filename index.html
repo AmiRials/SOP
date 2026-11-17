@@ -2,198 +2,172 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <!-- อนุญาตให้ผู้ใช้ซูมหน้าจอได้ (User-scalable enabled) -->
+    <!-- อนุญาตให้ซูมอ่านได้ทุกอุปกรณ์ -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title id="pageTitle">กำลังโหลดข้อมูล...</title>
+    
+    <!-- Google Fonts: Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        :root {
-            --primary-color: #0066cc;
-            --bg-color: #f8f9fa;
-            --text-color: #333333;
-            --card-bg: #ffffff;
-            --border-color: #dee2e6;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
-            font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            padding: 20px;
+            font-family: 'Prompt', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        .header-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .back-btn {
-            background-color: #6c757d;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-
-        .back-btn:hover {
-            background-color: #5a6268;
-        }
-
-        h1.title {
-            font-size: 24px;
-            color: #2c3e50;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 10px;
-        }
-
-        /* ส่วนของแท็บเมนูเลือกอ่าน */
-        .tab-menu {
-            display: flex;
-            overflow-x: auto;
-            gap: 10px;
-            margin-bottom: 25px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .tab-btn {
-            background: #e9ecef;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 600;
-            white-space: nowrap;
-            transition: all 0.3s ease;
-            color: #495057;
-        }
-
-        .tab-btn.active {
-            background: var(--primary-color);
-            color: white;
-            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
-        }
-
-        .tab-pane {
+        /* ซ่อน Scrollbar ของแถบเมนูแท็บบนมือถือแต่ยังเลื่อนซ้ายขวาได้ */
+        .no-scrollbar::-webkit-scrollbar {
             display: none;
-            animation: fadeIn 0.4s ease-in-out;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
 
-        .tab-pane.active {
+        /* บังคับรูปภาพทั้งหมดในเนื้อหาให้พอดีจอ ไม่ล้น แต่ซูมนิ้วขยายได้ */
+        #tabContent img {
+            max-width: 100% !important;
+            width: auto !important;
+            height: auto !important;
             display: block;
+            margin: 1.25rem auto;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
+            from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        /* การจัดการรูปภาพให้ Responsive พอดีจอ แต่ยังซูมหน้าจอได้ปกติ */
-        .tab-pane img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 15px auto;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        p {
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            margin-bottom: 15px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        table, th, td {
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            text-align: left;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            font-size: 18px;
-            color: #666;
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 min-h-screen antialiased">
 
-    <div class="container">
-        <div class="header-nav">
-            <!-- ปุ่มย้อนกลับตามลิงก์ที่กำหนด -->
-            <a href="https://amirials.github.io/app/" class="back-btn">&larr; ย้อนกลับ</a>
+    <!-- แถบเมนูด้านบน -->
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            <a href="https://amirials.github.io/app/" 
+               class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 text-sm font-medium transition-colors shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>ย้อนกลับ</span>
+            </a>
+
+            <span id="liveBadge" class="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                อัปเดตเรียลไทม์
+            </span>
         </div>
+    </header>
 
-        <h1 class="title" id="docTitle">กำลังโหลดข้อมูลจาก Google Doc...</h1>
+    <!-- พื้นที่เนื้อหาหลัก -->
+    <main class="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+            
+            <!-- หัวข้อเอกสาร -->
+            <div class="p-5 sm:p-8 border-b border-slate-100 bg-gradient-to-r from-blue-50/60 to-indigo-50/40">
+                <h1 id="docTitle" class="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 leading-snug">
+                    กำลังโหลดข้อมูลจากเอกสาร...
+                </h1>
+            </div>
 
-        <!-- แสดงสถานะกำลังโหลด -->
-        <div id="loadingIndicator" class="loading">กำลังดึงข้อมูลแบบเรียลไทม์ กรุณารอสักครู่...</div>
+            <!-- แถบเลือกแท็บเมนู -->
+            <div id="tabMenuWrapper" class="hidden border-b border-slate-200 bg-slate-50/70 px-4 sm:px-8 pt-3">
+                <div id="tabMenu" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-3">
+                    <!-- ปุ่มแท็บจะถูกสร้างอัตโนมัติที่นี่ -->
+                </div>
+            </div>
 
-        <!-- แท็บเมนูเลือกอ่านเนื้อหา -->
-        <div class="tab-menu" id="tabMenu" style="display: none;"></div>
+            <!-- สถานะกำลังโหลด (Skeleton / Spinner) -->
+            <div id="loadingIndicator" class="p-10 sm:p-16 flex flex-col items-center justify-center text-center">
+                <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                <p class="text-slate-600 font-medium">กำลังดึงข้อมูลล่าสุดจาก Google Document...</p>
+                <p class="text-slate-400 text-xs mt-1">โปรดรอสักครู่</p>
+            </div>
 
-        <!-- เนื้อหาภายในแต่ละแท็บ -->
-        <div class="tab-content" id="tabContent"></div>
-    </div>
+            <!-- กล่องแสดงข้อความ Error กรณีเชื่อมต่อไม่ได้ -->
+            <div id="errorBox" class="hidden p-8 sm:p-12 text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600 mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h2 class="text-lg font-semibold text-slate-800 mb-1">ไม่สามารถโหลดข้อมูลได้</h2>
+                <p class="text-sm text-slate-500 max-w-md mx-auto mb-5">
+                    กรุณาตรวจสอบว่าใน Google Apps Script ได้กด <b>Deploy > New version</b> และตั้งค่าสิทธิ์การเข้าถึงเป็น <b>Anyone (ทุกคน)</b> แล้ว
+                </p>
+                <button onclick="fetchDocumentData()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl shadow-sm transition">
+                    ลองโหลดใหม่อีกครั้ง
+                </button>
+            </div>
+
+            <!-- พื้นที่แสดงเนื้อหาแต่ละแท็บ -->
+            <div id="tabContent" class="p-5 sm:p-8 text-base sm:text-[17px] text-slate-700">
+                <!-- เนื้อหาจะถูกแทรกที่นี่ -->
+            </div>
+
+        </div>
+    </main>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbw-KFYGODiQByRq-GvGTXAbOCCylBUOED_utB9toFT21YabqF7Feka95y8_umDNaHq-/exec";
 
         async function fetchDocumentData() {
+            const loadingEl = document.getElementById('loadingIndicator');
+            const errorEl = document.getElementById('errorBox');
+            const tabContent = document.getElementById('tabContent');
+
+            loadingEl.classList.remove('hidden');
+            errorEl.classList.add('hidden');
+            tabContent.innerHTML = '';
+
             try {
-                const response = await fetch(API_URL);
+                // ใช้ redirect: 'follow' และไม่ใส่ custom headers เพื่อเลี่ยง CORS Preflight
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
                 
-                // กำหนดชื่อหัวข้อเอกสาร
                 document.getElementById('pageTitle').innerText = data.docTitle || "เอกสารออนไลน์";
                 document.getElementById('docTitle').innerText = data.docTitle || "เอกสารออนไลน์";
                 
-                // ซ่อนสถานะกำลังโหลด
-                document.getElementById('loadingIndicator').style.display = 'none';
-                
+                loadingEl.classList.add('hidden');
                 renderUI(data.tabs);
             } catch (error) {
                 console.error('Error fetching data:', error);
-                document.getElementById('loadingIndicator').innerHTML = '<span style="color: red;">ไม่สามารถโหลดข้อมูลได้ กรุณาตรวจสอบการตั้งค่า Web App อีกครั้ง</span>';
+                loadingEl.classList.add('hidden');
+                errorEl.classList.remove('hidden');
             }
         }
 
         function renderUI(tabsData) {
+            const tabMenuWrapper = document.getElementById('tabMenuWrapper');
             const tabMenu = document.getElementById('tabMenu');
             const tabContent = document.getElementById('tabContent');
             
@@ -201,47 +175,55 @@
             tabContent.innerHTML = '';
             
             if (!tabsData || tabsData.length === 0) {
-                tabContent.innerHTML = '<p>ไม่พบเนื้อหาในเอกสาร</p>';
+                tabContent.innerHTML = '<p class="text-center text-slate-500 py-8">ไม่พบเนื้อหาในเอกสาร</p>';
                 return;
             }
 
             tabsData.forEach((tab, index) => {
-                const isActive = index === 0 ? 'active' : '';
+                const isFirst = index === 0;
 
                 // สร้างปุ่มแท็บ
                 const btn = document.createElement('button');
-                btn.className = `tab-btn ${isActive}`;
+                btn.type = 'button';
+                btn.className = isFirst 
+                    ? 'tab-btn px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all bg-blue-600 text-white shadow-sm'
+                    : 'tab-btn px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200';
                 btn.innerText = tab.title;
                 btn.onclick = (e) => switchTab(e, `tab-${index}`);
                 tabMenu.appendChild(btn);
 
-                // สร้างเนื้อหาในแต่ละแท็บ
+                // สร้างกล่องเนื้อหา
                 const pane = document.createElement('div');
                 pane.id = `tab-${index}`;
-                pane.className = `tab-pane ${isActive}`;
+                pane.className = isFirst ? 'tab-pane block animate-fade-in' : 'tab-pane hidden';
                 pane.innerHTML = tab.content;
                 tabContent.appendChild(pane);
             });
 
-            tabMenu.style.display = 'flex';
+            // แสดงแถบเมนูแท็บ (แม้มี 1 แท็บก็แสดงเป็นชื่อหมวดหมู่ให้ดูเป็นระเบียบ)
+            tabMenuWrapper.classList.remove('hidden');
         }
 
         function switchTab(evt, tabId) {
-            const panes = document.getElementsByClassName('tab-pane');
-            for (let i = 0; i < panes.length; i++) {
-                panes[i].classList.remove('active');
-            }
+            const panes = document.querySelectorAll('.tab-pane');
+            panes.forEach(p => {
+                p.classList.add('hidden');
+                p.classList.remove('block', 'animate-fade-in');
+            });
 
-            const buttons = document.getElementsByClassName('tab-btn');
-            for (let i = 0; i < buttons.length; i++) {
-                buttons[i].classList.remove('active');
-            }
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(b => {
+                b.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all bg-white text-slate-600 hover:bg-slate-200/70 border border-slate-200';
+            });
 
-            document.getElementById(tabId).classList.add('active');
-            evt.currentTarget.classList.add('active');
+            const activePane = document.getElementById(tabId);
+            activePane.classList.remove('hidden');
+            activePane.classList.add('block', 'animate-fade-in');
+
+            evt.currentTarget.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all bg-blue-600 text-white shadow-sm';
         }
 
-        // เริ่มต้นดึงข้อมูลเมื่อโหลดหน้าเว็บ
+        // โหลดข้อมูลทันทีเมื่อเปิดหน้าเว็บ
         fetchDocumentData();
     </script>
 </body>
