@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title id="pageTitle">กำลังโหลด...</title>
+    <title id="pageTitle">คู่มือการใช้งาน AmiRials</title>
     
     <!-- Google Fonts: Prompt -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -137,7 +137,7 @@
                 </div>
                 <h2 class="text-lg font-semibold text-white mb-1">ไม่สามารถโหลดข้อมูลได้</h2>
                 <p class="text-sm text-zinc-300 max-w-md mx-auto mb-5">
-                    กรุณาตรวจสอบว่าใน Google Apps Script ได้กด <b>Deploy > New version</b> แล้ว
+                    กรุณาโหลดใหม่อีกครั้งภายหลัง
                 </p>
                 <button onclick="fetchDocumentData()" class="px-5 py-2.5 bg-orange-600 hover:bg-orange-500 text-white text-sm font-medium rounded-xl shadow transition">
                     ลองโหลดใหม่อีกครั้ง
@@ -150,9 +150,8 @@
             <!-- พื้นที่แสดงเนื้อหาของแท็บที่เลือก -->
             <div id="tabContent" class="p-5 sm:p-8 text-base sm:text-[17px] text-white bg-zinc-800"></div>
 
-            <!-- ส่วนท้ายหน้า: ปุ่ม Like / Dislike ถามความคิดเห็น และปุ่มเลื่อนขึ้นบนสุด -->
+            <!-- ส่วนท้ายหน้า: ปุ่ม Like / Dislike และปุ่มเลื่อนขึ้นบนสุด -->
             <div id="bottomBar" class="hidden px-5 sm:px-8 py-6 bg-zinc-800/95 border-t border-zinc-700 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <!-- ส่วนประเมินความพึงพอใจ (Like / Dislike) -->
                 <div class="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
                     <span class="text-sm text-zinc-300">เนื้อหานี้มีประโยชน์ไหมครับ?</span>
                     <div class="flex items-center gap-2">
@@ -173,7 +172,6 @@
                     </div>
                 </div>
 
-                <!-- ปุ่มเลื่อนขึ้นบนสุด -->
                 <button onclick="scrollToTop()" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white text-sm font-medium shadow transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
@@ -197,18 +195,14 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbw-KFYGODiQByRq-GvGTXAbOCCylBUOED_utB9toFT21YabqF7Feka95y8_umDNaHq-/exec";
         let allTabsData = [];
         let currentTabIndex = 0;
-
-        // ระบบจัดเก็บและโหลดคะแนน Like/Dislike แยกตามหน้า (Tab ID)
         let feedbackData = JSON.parse(localStorage.getItem('doc_feedback') || '{}');
 
         async function fetchDocumentData() {
             const loadingEl = document.getElementById('loadingIndicator');
             const errorEl = document.getElementById('errorBox');
-            const tabContent = document.getElementById('tabContent');
 
             loadingEl.classList.remove('hidden');
             errorEl.classList.add('hidden');
-            tabContent.innerHTML = '';
 
             try {
                 const response = await fetch(API_URL, {
@@ -227,7 +221,7 @@
                 document.getElementById('docTitle').innerText = data.docTitle || "คู่มือการใช้งาน";
                 
                 loadingEl.classList.add('hidden');
-                renderUI(allTabsData);
+                renderFastUI(allTabsData);
             } catch (error) {
                 console.error('Error fetching data:', error);
                 loadingEl.classList.add('hidden');
@@ -235,7 +229,8 @@
             }
         }
 
-        function renderUI(tabsData) {
+        // ระบบแสดงผลแบบรวดเร็ว: สร้างปุ่มเมนูก่อน แล้วแสดงแท็บแรกทันที
+        function renderFastUI(tabsData) {
             const tabMenuWrapper = document.getElementById('tabMenuWrapper');
             const tabMenu = document.getElementById('tabMenu');
             const tabContent = document.getElementById('tabContent');
@@ -249,47 +244,62 @@
                 return;
             }
 
+            // 1. สร้างปุ่มเมนูด้านบนทั้งหมดทันที
             tabsData.forEach((tab, index) => {
                 const isFirst = index === 0;
-
                 const btn = document.createElement('button');
                 btn.type = 'button';
+                btn.id = `tab-btn-${index}`;
                 btn.className = isFirst 
                     ? 'tab-btn px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all bg-orange-600 text-white shadow-md ring-2 ring-orange-400/50'
                     : 'tab-btn px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all bg-orange-600/40 hover:bg-orange-600/80 text-white border border-orange-500/30';
                 btn.innerText = tab.title;
                 btn.onclick = () => selectTab(index);
                 tabMenu.appendChild(btn);
-
-                const pane = document.createElement('div');
-                pane.id = `tab-${index}`;
-                pane.className = isFirst ? 'tab-pane block animate-fade-in' : 'tab-pane hidden';
-                pane.innerHTML = tab.content;
-                tabContent.appendChild(pane);
             });
+
+            // 2. แสดงเนื้อหาเฉพาะแท็บแรกก่อนทันที เพื่อความรวดเร็ว
+            const firstPane = document.createElement('div');
+            firstPane.id = `tab-0`;
+            firstPane.className = 'tab-pane block animate-fade-in';
+            firstPane.innerHTML = tabsData[0].content;
+            tabContent.appendChild(firstPane);
 
             tabMenuWrapper.classList.remove('hidden');
             bottomBar.classList.remove('hidden');
-            updateFeedbackUI(currentTabIndex);
+            updateFeedbackUI(0);
         }
 
+        // เมื่อคลิกเลือกแท็บเมนูอื่น ค่อยโหลด/แสดงเนื้อหาหน้านั้นทันที
         function selectTab(index) {
             currentTabIndex = index;
             if (document.getElementById('searchInput').value.trim() !== '') {
                 clearSearch(false);
             }
 
+            const tabContent = document.getElementById('tabContent');
+            
+            // ตรวจสอบว่าเนื้อหาของแท็บนี้ถูกสร้างหรือยัง ถ้ายังให้สร้างเพิ่ม (Lazy Load)
+            let pane = document.getElementById(`tab-${index}`);
+            if (!pane) {
+                pane = document.createElement('div');
+                pane.id = `tab-${index}`;
+                pane.className = 'tab-pane hidden';
+                pane.innerHTML = allTabsData[index].content;
+                tabContent.appendChild(pane);
+            }
+
+            // ซ่อนทุกหน้าแล้วแสดงหน้าปัจจุบัน
             const panes = document.querySelectorAll('.tab-pane');
-            panes.forEach((p, idx) => {
-                if (idx === index) {
-                    p.classList.remove('hidden');
-                    p.classList.add('block', 'animate-fade-in');
-                } else {
-                    p.classList.add('hidden');
-                    p.classList.remove('block', 'animate-fade-in');
-                }
+            panes.forEach(p => {
+                p.classList.add('hidden');
+                p.classList.remove('block', 'animate-fade-in');
             });
 
+            pane.classList.remove('hidden');
+            pane.classList.add('block', 'animate-fade-in');
+
+            // สลับสถานะ Active ของปุ่มเมนู
             const buttons = document.querySelectorAll('.tab-btn');
             buttons.forEach((b, idx) => {
                 if (idx === index) {
@@ -302,7 +312,6 @@
             updateFeedbackUI(index);
         }
 
-        // จัดการกดปุ่ม Like / Dislike
         function handleFeedback(type) {
             const tabKey = `tab_${currentTabIndex}`;
             if (!feedbackData[tabKey]) {
@@ -312,7 +321,6 @@
             const currentVote = feedbackData[tabKey].userVote;
 
             if (currentVote === type) {
-                // ยกเลิกโหวตหากกดซ้ำปุ่มเดิม
                 feedbackData[tabKey][type + 's']--;
                 feedbackData[tabKey].userVote = null;
             } else {
@@ -349,7 +357,6 @@
             }
         }
 
-        // ระบบค้นหาข้อความ
         function handleSearch(keyword) {
             const query = keyword.trim();
             const clearBtn = document.getElementById('clearSearchBtn');
