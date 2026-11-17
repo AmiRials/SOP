@@ -122,10 +122,10 @@
                 <div id="tabMenu" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-3.5"></div>
             </div>
 
-            <!-- สถานะกำลังโหลด -->
+            <!-- สถานะกำลังโหลดครั้งแรก -->
             <div id="loadingIndicator" class="p-12 sm:p-16 flex flex-col items-center justify-center text-center">
                 <div class="w-10 h-10 border-4 border-zinc-600 border-t-orange-500 rounded-full animate-spin mb-4"></div>
-                <p class="text-white font-medium">กำลังโหลด...</p>
+                <p class="text-white font-medium">กำลังโหลดคู่มือ...</p>
             </div>
 
             <!-- กล่องแจ้งเตือนเมื่อโหลดไม่สำเร็จ -->
@@ -158,7 +158,7 @@
                         <button id="likeBtn" onclick="handleFeedback('like')" 
                             class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-700 hover:bg-orange-600 text-white text-xs font-medium transition-all border border-zinc-600">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2m0下のv5a2 2 0 01-2 2h-.5c-.51 0-.905.19-1.165.523l-1.835 2.398a2 2 0 00-.332 1.107V20h8.667a2 2 0 001.97-1.604l1.25-6.25A2 2 0 0016.5 10H14z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2m0 0v5a2 2 0 01-2 2h-.5c-.51 0-.905.19-1.165.523l-1.835 2.398a2 2 0 00-.332 1.107V20h8.667a2 2 0 001.97-1.604l1.25-6.25A2 2 0 0016.5 10H14z" />
                             </svg>
                             <span id="likeCount">0</span>
                         </button>
@@ -191,11 +191,12 @@
         </svg>
     </button>
 
-        <script>
+    <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbw-KFYGODiQByRq-GvGTXAbOCCylBUOED_utB9toFT21YabqF7Feka95y8_umDNaHq-/exec";
-        let allTabsData = []; // เก็บ id, title และ content (ถ้าโหลดแล้ว)
+        let allTabsData = [];
         let currentTabIndex = 0;
         let feedbackData = JSON.parse(localStorage.getItem('doc_feedback') || '{}');
+        let isPrefetching = false;
 
         async function fetchDocumentData() {
             const loadingEl = document.getElementById('loadingIndicator');
@@ -205,7 +206,7 @@
             errorEl.classList.add('hidden');
 
             try {
-                // ยิงครั้งแรก: ได้รายชื่อแท็บ + เนื้อหาแท็บแรกทันที ไม่ต้องรอนาน 30 วิ
+                // 1. โหลดข้อมูลรอบแรก: ดึงเฉพาะรายชื่อแท็บ + เนื้อหาแท็บแรกทันที (เสร็จไวใน 1-2 วินาที)
                 const response = await fetch(API_URL, {
                     method: 'GET',
                     redirect: 'follow'
@@ -218,7 +219,6 @@
                 const data = await response.json();
                 allTabsData = data.tabs || [];
 
-                // ใส่ content แท็บแรกลงใน cache ทันที
                 if (allTabsData.length > 0) {
                     allTabsData[0].content = data.initialContent;
                 }
@@ -227,11 +227,59 @@
                 document.getElementById('docTitle').innerText = data.docTitle || "คู่มือการใช้งาน";
                 
                 loadingEl.classList.add('hidden');
+                
+                // แสดงหน้าแรกทันที
                 renderFastUI(allTabsData);
+
+                // เริ่มแอบโหลดแท็บที่เหลือในเบื้องหลังเงียบๆ
+                prefetchRemainingTabs();
+
             } catch (error) {
                 console.error('Error fetching data:', error);
                 loadingEl.classList.add('hidden');
                 errorEl.classList.remove('hidden');
+            }
+        }
+
+        // ฟังก์ชันแอบโหลดแท็บที่เหลือในเบื้องหลัง
+        async function prefetchRemainingTabs() {
+            if (isPrefetching) return;
+            isPrefetching = true;
+
+            for (let i = 1; i < allTabsData.length; i++) {
+                if (!allTabsData[i].content) {
+                    try {
+                        const res = await fetch(`${API_URL}?tabId=${encodeURIComponent(allTabsData[i].id)}`, {
+                            method: 'GET',
+                            redirect: 'follow'
+                        });
+                        const result = await res.json();
+                        allTabsData[i].content = result.content;
+
+                        // ถ้าผู้ใช้กำลังรอเปิดแท็บนี้อยู่ ให้แสดงเนื้อหาทันที
+                        const pane = document.getElementById(`tab-${i}`);
+                        if (pane && !pane.classList.contains('hidden') && pane.innerHTML.includes('animate-spin')) {
+                            pane.innerHTML = result.content;
+                            pane.classList.add('animate-fade-in');
+                        }
+
+                        // ถ้ากำลังเปิดค้นหาอยู่ ให้อัปเดตผลการค้นหาแบบ Real-time ทันที
+                        const searchInput = document.getElementById('searchInput');
+                        if (searchInput.value.trim().length > 0) {
+                            handleSearch(searchInput.value);
+                        }
+                    } catch (err) {
+                        console.warn(`Pre-fetch tab ${i} failed:`, err);
+                    }
+                    await new Promise(r => setTimeout(r, 60));
+                }
+            }
+            isPrefetching = false;
+
+            // ตรวจสอบอัปเดตผลการค้นหาครั้งสุดท้ายเมื่อโหลดครบทุกแท็บ
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput.value.trim().length > 0) {
+                handleSearch(searchInput.value);
             }
         }
 
@@ -249,7 +297,7 @@
                 return;
             }
 
-            // 1. สร้างปุ่มเมนูด้านบนทั้งหมดทันที
+            // สร้างปุ่มแท็บ
             tabsData.forEach((tab, index) => {
                 const isFirst = index === 0;
                 const btn = document.createElement('button');
@@ -263,7 +311,7 @@
                 tabMenu.appendChild(btn);
             });
 
-            // 2. แสดงเนื้อหาแท็บแรกทันที
+            // แสดงเนื้อหาแท็บแรกทันที
             const firstPane = document.createElement('div');
             firstPane.id = `tab-0`;
             firstPane.className = 'tab-pane block animate-fade-in';
@@ -275,14 +323,13 @@
             updateFeedbackUI(0);
         }
 
-        // เมื่อคลิกเลือกแท็บเมนูอื่น: ถ้ายังไม่เคยโหลดเนื้อหา ให้ดึงเฉพาะแท็บนั้นแบบ Asynchronous
         async function selectTab(index) {
             currentTabIndex = index;
             if (document.getElementById('searchInput').value.trim() !== '') {
                 clearSearch(false);
             }
 
-            // สลับสถานะ Active ของปุ่มเมนู
+            // สลับสถานะปุ่มเมนู
             const buttons = document.querySelectorAll('.tab-btn');
             buttons.forEach((b, idx) => {
                 if (idx === index) {
@@ -295,7 +342,6 @@
             const tabContent = document.getElementById('tabContent');
             let pane = document.getElementById(`tab-${index}`);
 
-            // ถ้ายังไม่มีแท็บนี้ใน DOM
             if (!pane) {
                 pane = document.createElement('div');
                 pane.id = `tab-${index}`;
@@ -303,17 +349,21 @@
                 tabContent.appendChild(pane);
             }
 
-            // ซ่อนทุกหน้าก่อน
             const panes = document.querySelectorAll('.tab-pane');
             panes.forEach(p => {
                 p.classList.add('hidden');
                 p.classList.remove('block', 'animate-fade-in');
             });
 
-            // ตรวจสอบว่ามีเนื้อหาใน Cache หรือยัง
             const tabData = allTabsData[index];
-            if (!tabData.content) {
-                // แสดงสถานะหมุนรอเฉพาะในแท็บนี้
+
+            // ถ้ามีเนื้อหาในเครื่องแล้ว (โหลดเสร็จแล้ว) แสดงทันที 0 วินาที
+            if (tabData.content) {
+                pane.innerHTML = tabData.content;
+                pane.classList.remove('hidden');
+                pane.classList.add('block', 'animate-fade-in');
+            } else {
+                // ถ้ายังแอบโหลดมาไม่ถึง ให้แสดง Spinner หมุนรอเฉพาะแท็บนี้
                 pane.innerHTML = `
                     <div class="py-12 flex flex-col items-center justify-center text-center">
                         <div class="w-8 h-8 border-3 border-zinc-600 border-t-orange-500 rounded-full animate-spin mb-3"></div>
@@ -329,16 +379,12 @@
                         redirect: 'follow'
                     });
                     const result = await res.json();
-                    tabData.content = result.content; // บันทึกลง cache จะได้ไม่ต้องโหลดซ้ำ
+                    tabData.content = result.content;
                     pane.innerHTML = tabData.content;
                     pane.classList.add('animate-fade-in');
                 } catch (e) {
                     pane.innerHTML = '<p class="text-center text-orange-400 py-6">เกิดข้อผิดพลาดในการโหลดเนื้อหา กรุณาลองใหม่อีกครั้ง</p>';
                 }
-            } else {
-                pane.innerHTML = tabData.content;
-                pane.classList.remove('hidden');
-                pane.classList.add('block', 'animate-fade-in');
             }
 
             updateFeedbackUI(index);
@@ -406,8 +452,19 @@
 
             const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const regex = new RegExp(`(${escapedQuery})`, 'gi');
+            
+            // แสดงสถานะเบาๆ หากระบบยังโหลดข้อมูลเบื้องหลังไม่ครบ
+            const stillLoading = allTabsData.some(tab => !tab.content);
+            const loadingNotice = stillLoading 
+                ? `<span class="text-xs text-orange-400/80 animate-pulse flex items-center gap-1.5">
+                     <span class="w-1.5 h-1.5 rounded-full bg-orange-400 animate-ping"></span> 
+                     กำลังค้นหาแบบละเอียด...
+                   </span>` 
+                : `<span class="text-xs text-zinc-400">ค้นหาจากทุกแท็บสมบูรณ์แล้ว</span>`;
+
             let resultsHtml = `<div class="mb-4 pb-2 border-b border-zinc-700 flex items-center justify-between">
                 <span class="text-sm text-orange-400 font-medium">ผลการค้นหาสำหรับ "${query}"</span>
+                ${loadingNotice}
             </div>`;
             let matchCount = 0;
 
